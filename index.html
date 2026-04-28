@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StabilityAI — Pharma Degradation Predictor | Yana A B</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --bg2: #111118;
+    --bg3: #18181f;
+    --border: rgba(255,255,255,0.08);
+    --border2: rgba(255,255,255,0.14);
+    --text: #f0f0f4;
+    --muted: #8888a0;
+    --accent: #7c6fff;
+    --accent2: #3de8a0;
+    --accent3: #ff6b6b;
+    --accent4: #ffa94d;
+    --font-display: 'Syne', sans-serif;
+    --font-body: 'DM Sans', sans-serif;
+    --font-mono: 'DM Mono', monospace;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 15px;
+    line-height: 1.7;
+    overflow-x: hidden;
+  }
+
+  /* NAV */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    background: rgba(10,10,15,0.85);
+    backdrop-filter: blur(16px);
+    border-bottom: 0.5px solid var(--border);
+    padding: 0 40px;
+    display: flex; align-items: center; gap: 32px; height: 56px;
+  }
+  .nav-logo { font-family: var(--font-display); font-size: 16px; font-weight: 700; color: var(--text); letter-spacing: -0.02em; }
+  .nav-logo span { color: var(--accent); }
+  .nav-links { display: flex; gap: 24px; margin-left: auto; }
+  .nav-links a { color: var(--muted); font-size: 13px; text-decoration: none; transition: color 0.2s; }
+  .nav-links a:hover { color: var(--text); }
+  .nav-badge { background: rgba(124,111,255,0.15); border: 0.5px solid rgba(124,111,255,0.4); color: var(--accent); border-radius: 2em; padding: 3px 12px; font-size: 11px; font-family: var(--font-mono); margin-left: 8px; }
+
+  /* HERO */
+  .hero {
+    min-height: 100vh;
+    display: flex; flex-direction: column; justify-content: center;
+    padding: 120px 40px 80px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero-grid {
+    position: absolute; inset: 0; opacity: 0.04;
+    background-image: linear-gradient(rgba(124,111,255,0.5) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(124,111,255,0.5) 1px, transparent 1px);
+    background-size: 60px 60px;
+  }
+  .hero-glow {
+    position: absolute; top: -200px; left: -200px;
+    width: 700px; height: 700px;
+    background: radial-gradient(circle, rgba(124,111,255,0.12) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .hero-glow2 {
+    position: absolute; bottom: -200px; right: -100px;
+    width: 500px; height: 500px;
+    background: radial-gradient(circle, rgba(61,232,160,0.08) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .hero-content { position: relative; max-width: 900px; }
+  .hero-tag {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(124,111,255,0.1); border: 0.5px solid rgba(124,111,255,0.3);
+    border-radius: 2em; padding: 5px 14px; font-size: 12px; font-family: var(--font-mono);
+    color: var(--accent); margin-bottom: 28px;
+  }
+  .hero-tag::before { content: ''; width: 6px; height: 6px; background: var(--accent2); border-radius: 50%; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+  .hero h1 {
+    font-family: var(--font-display);
+    font-size: clamp(42px, 7vw, 80px);
+    font-weight: 700;
+    line-height: 1.0;
+    letter-spacing: -0.03em;
+    margin-bottom: 24px;
+  }
+  .hero h1 .accent { color: var(--accent); }
+  .hero h1 .accent2 { color: var(--accent2); }
+  .hero-sub {
+    font-size: 17px; color: var(--muted); max-width: 620px;
+    line-height: 1.75; margin-bottom: 40px;
+  }
+  .hero-cta { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 60px; }
+  .btn-primary {
+    background: var(--accent); color: #fff;
+    border: none; border-radius: 8px; padding: 12px 24px;
+    font-family: var(--font-body); font-size: 14px; font-weight: 500;
+    cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 8px;
+    transition: opacity 0.2s, transform 0.15s;
+  }
+  .btn-primary:hover { opacity: 0.85; transform: translateY(-1px); }
+  .btn-secondary {
+    background: transparent; color: var(--text);
+    border: 0.5px solid var(--border2); border-radius: 8px; padding: 12px 24px;
+    font-family: var(--font-body); font-size: 14px; font-weight: 500;
+    cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 8px;
+    transition: background 0.2s, transform 0.15s;
+  }
+  .btn-secondary:hover { background: var(--bg3); transform: translateY(-1px); }
+  .hero-stats {
+    display: flex; gap: 40px; flex-wrap: wrap;
+    padding-top: 40px; border-top: 0.5px solid var(--border);
+  }
+  .hero-stat-val { font-family: var(--font-display); font-size: 32px; font-weight: 700; line-height: 1; }
+  .hero-stat-lbl { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+  /* SECTIONS */
+  section { padding: 80px 40px; max-width: 1100px; margin: 0 auto; }
+  .section-label { font-family: var(--font-mono); font-size: 11px; color: var(--accent); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 12px; }
+  .section-title { font-family: var(--font-display); font-size: clamp(26px, 4vw, 40px); font-weight: 700; letter-spacing: -0.02em; margin-bottom: 16px; line-height: 1.1; }
+  .section-sub { color: var(--muted); font-size: 15px; max-width: 560px; line-height: 1.75; margin-bottom: 48px; }
+  .divider { border: none; border-top: 0.5px solid var(--border); margin: 0 40px; }
+
+  /* PROBLEM / SOLUTION */
+  .problem-solution { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 48px; }
+  .ps-card {
+    background: var(--bg2); border: 0.5px solid var(--border);
+    border-radius: 16px; padding: 28px;
+  }
+  .ps-card.problem { border-left: 3px solid var(--accent3); }
+  .ps-card.solution { border-left: 3px solid var(--accent2); }
+  .ps-label { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 12px; }
+  .ps-card.problem .ps-label { color: var(--accent3); }
+  .ps-card.solution .ps-label { color: var(--accent2); }
+  .ps-card p { color: var(--muted); font-size: 14px; line-height: 1.75; }
+  .ps-card strong { color: var(--text); font-weight: 500; }
+
+  /* KPI STRIP */
+  .kpi-strip {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 64px;
+  }
+  .kpi-card {
+    background: var(--bg2); border: 0.5px solid var(--border);
+    border-radius: 14px; padding: 24px 20px;
+    position: relative; overflow: hidden;
+    transition: border-color 0.2s, transform 0.2s;
+  }
+  .kpi-card:hover { border-color: var(--border2); transform: translateY(-2px); }
+  .kpi-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  }
+  .kpi-card.c1::before { background: var(--accent2); }
+  .kpi-card.c2::before { background: var(--accent); }
+  .kpi-card.c3::before { background: var(--accent4); }
+  .kpi-card.c4::before { background: var(--accent3); }
+  .kpi-val { font-family: var(--font-display); font-size: 28px; font-weight: 700; line-height: 1; margin-bottom: 6px; }
+  .kpi-card.c1 .kpi-val { color: var(--accent2); }
+  .kpi-card.c2 .kpi-val { color: var(--accent); }
+  .kpi-card.c3 .kpi-val { color: var(--accent4); }
+  .kpi-card.c4 .kpi-val { color: var(--accent3); }
+  .kpi-lbl { font-size: 12px; color: var(--muted); line-height: 1.5; }
+  .kpi-delta { font-family: var(--font-mono); font-size: 10px; color: var(--muted); margin-top: 8px; }
+
+  /* PERSONAS */
+  .persona-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+  .persona-card {
+    background: var(--bg2); border: 0.5px solid var(--border);
+    border-radius: 16px; padding: 24px;
+    transition: border-color 0.2s;
+  }
+  .persona-card:hover { border-color: var(--border2); }
+  .persona-head { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
+  .avatar {
+    width: 44px; height: 44px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-display); font-size: 14px; font-weight: 700; flex-shrink: 0;
+  }
+  .persona-name { font-family: var(--font-display); font-size: 15px; font-weight: 600; }
+  .persona-role { font-size: 12px; color: var(--muted); }
+  .persona-pain { font-size: 13px; color: var(--muted); line-height: 1.7; margin-bottom: 12px; }
+  .persona-need {
+    background: var(--bg3); border-radius: 8px; padding: 10px 14px;
+    font-size: 12px; color: var(--text); line-height: 1.6;
+    border-left: 2px solid var(--accent);
+  }
+  .persona-need strong { color: var(--accent); }
+
+  /* ROADMAP */
+  .roadmap { display: flex; flex-direction: column; gap: 0; }
+  .rm-phase { display: grid; grid-template-columns: 120px 1fr; gap: 0; }
+  .rm-label {
+    font-family: var(--font-mono); font-size: 11px; color: var(--muted);
+    text-align: right; padding: 16px 20px 16px 0;
+    border-right: 1px solid var(--border2);
+    line-height: 1.5;
+  }
+  .rm-label .phase-tag {
+    display: block; font-size: 10px; font-family: var(--font-mono);
+    margin-top: 4px; padding: 2px 7px; border-radius: 2em; display: inline-block;
+  }
+  .rm-items { padding: 12px 0 12px 24px; display: flex; flex-direction: column; gap: 10px; }
+  .rm-item {
+    background: var(--bg2); border: 0.5px solid var(--border);
+    border-radius: 12px; padding: 16px 18px;
+    display: flex; align-items: flex-start; gap: 14px;
+    transition: border-color 0.2s;
+  }
+  .rm-item:hover { border-color: var(--border2); }
+  .rm-item.done { border-left: 2px solid var(--accent2); }
+  .rm-item.active { border-left: 2px solid var(--accent); }
+  .rm-item.future { opacity: 0.5; }
+  .rm-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 6px; flex-shrink: 0; }
+  .rm-title { font-size: 14px; font-weight: 500; margin-bottom: 3px; }
+  .rm-desc { font-size: 12px; color: var(--muted); line-height: 1.65; }
+  .rm-tag {
+    font-family: var(--font-mono); font-size: 10px;
+    padding: 2px 8px; border-radius: 2em; margin-top: 6px; display: inline-block;
+  }
+
+  /* RISK TABLE */
+  .risk-table { width: 100%; border-collapse: collapse; }
+  .risk-table th {
+    text-align: left; font-family: var(--font-mono); font-size: 11px; color: var(--muted);
+    letter-spacing: 0.06em; text-transform: uppercase;
+    padding: 10px 14px; border-bottom: 0.5px solid var(--border2);
+  }
+  .risk-table td {
+    padding: 14px; border-bottom: 0.5px solid var(--border);
+    font-size: 13px; color: var(--muted); vertical-align: top;
+  }
+  .risk-table td:first-child { color: var(--text); font-weight: 500; }
+  .risk-table tr:last-child td { border-bottom: none; }
+  .risk-table tr:hover td { background: var(--bg2); }
+  .severity { padding: 3px 9px; border-radius: 2em; font-size: 11px; font-family: var(--font-mono); }
+  .s-high { background: rgba(255,107,107,0.15); color: var(--accent3); }
+  .s-med { background: rgba(255,169,77,0.15); color: var(--accent4); }
+  .s-low { background: rgba(61,232,160,0.15); color: var(--accent2); }
+
+  /* VALIDATION */
+  .validation-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+  .val-card {
+    background: var(--bg2); border: 0.5px solid var(--border);
+    border-radius: 14px; padding: 22px;
+  }
+  .val-title { font-size: 13px; font-weight: 500; margin-bottom: 4px; }
+  .val-val { font-family: var(--font-display); font-size: 26px; font-weight: 700; margin-bottom: 4px; }
+  .val-target { font-size: 11px; color: var(--muted); margin-bottom: 12px; }
+  .bar-bg { height: 4px; background: var(--bg3); border-radius: 2px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 2px; }
+
+  /* COMPETITIVE */
+  .comp-table { width: 100%; border-collapse: collapse; }
+  .comp-table th { text-align: left; font-family: var(--font-mono); font-size: 11px; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; padding: 10px 14px; border-bottom: 0.5px solid var(--border2); }
+  .comp-table td { padding: 14px; border-bottom: 0.5px solid var(--border); font-size: 13px; color: var(--muted); }
+  .comp-table td:first-child { color: var(--text); font-weight: 500; }
+  .comp-table tr.winner td { color: var(--accent2); }
+  .comp-table tr.winner td:first-child { color: var(--accent2); }
+
+  /* CODE */
+  .code-block {
+    background: var(--bg2); border: 0.5px solid var(--border);
+    border-radius: 14px; overflow: hidden;
+  }
+  .code-header {
+    display: flex; align-items: center; gap: 8px; padding: 12px 16px;
+    border-bottom: 0.5px solid var(--border); background: var(--bg3);
+  }
+  .code-dot { width: 10px; height: 10px; border-radius: 50%; }
+  .code-filename { font-family: var(--font-mono); font-size: 12px; color: var(--muted); margin-left: 4px; }
+  .code-body { padding: 20px; font-family: var(--font-mono); font-size: 13px; line-height: 1.8; overflow-x: auto; }
+  .cg { color: #6a9955; } .cb { color: #569cd6; } .cs { color: #ce9178; } .cm { color: var(--muted); }
+
+  /* TECH STACK */
+  .tech-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+  .tech-card {
+    background: var(--bg2); border: 0.5px solid var(--border);
+    border-radius: 14px; padding: 20px;
+    display: flex; gap: 16px; align-items: flex-start;
+    transition: border-color 0.2s;
+  }
+  .tech-card:hover { border-color: var(--border2); }
+  .tech-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+  .tech-name { font-size: 14px; font-weight: 500; margin-bottom: 3px; }
+  .tech-desc { font-size: 12px; color: var(--muted); line-height: 1.6; }
+
+  /* FOOTER */
+  footer {
+    border-top: 0.5px solid var(--border);
+    padding: 40px;
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: gap;
+    gap: 20px;
+  }
+  .footer-left { font-family: var(--font-display); font-size: 20px; font-weight: 700; letter-spacing: -0.02em; }
+  .footer-left span { color: var(--accent); }
+  .footer-right { font-size: 13px; color: var(--muted); text-align: right; }
+  .footer-right a { color: var(--accent); text-decoration: none; }
+
+  /* BADGE ROW */
+  .badge-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 32px; }
+  .badge { padding: 4px 12px; border-radius: 2em; font-size: 11px; font-family: var(--font-mono); border: 0.5px solid; }
+  .b-green { background: rgba(61,232,160,0.08); color: var(--accent2); border-color: rgba(61,232,160,0.3); }
+  .b-purple { background: rgba(124,111,255,0.08); color: var(--accent); border-color: rgba(124,111,255,0.3); }
+  .b-orange { background: rgba(255,169,77,0.08); color: var(--accent4); border-color: rgba(255,169,77,0.3); }
+  .b-red { background: rgba(255,107,107,0.08); color: var(--accent3); border-color: rgba(255,107,107,0.3); }
+  .b-teal { background: rgba(61,232,200,0.08); color: #3de8c8; border-color: rgba(61,232,200,0.3); }
+
+  @media (max-width: 768px) {
+    nav { padding: 0 20px; }
+    .hero { padding: 100px 20px 60px; }
+    section { padding: 60px 20px; }
+    .divider { margin: 0 20px; }
+    .problem-solution, .kpi-strip, .persona-grid, .validation-grid, .tech-grid { grid-template-columns: 1fr; }
+    .rm-phase { grid-template-columns: 80px 1fr; }
+    footer { padding: 30px 20px; }
+    .footer-right { text-align: left; }
+    .nav-links { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">Stability<span>AI</span></div>
+  <div class="nav-links">
+    <a href="#problem">Problem</a>
+    <a href="#personas">Personas</a>
+    <a href="#roadmap">Roadmap</a>
+    <a href="#metrics">Metrics</a>
+    <a href="#risks">Risks</a>
+    <a href="#code">Code</a>
+  </div>
+  <span class="nav-badge">v1.0 · May 2026</span>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-grid"></div>
+  <div class="hero-glow"></div>
+  <div class="hero-glow2"></div>
+  <div class="hero-content">
+    <div class="hero-tag">M.Sc. Product · St Joseph's University · Microlabs Kudlu</div>
+    <h1>Predicting drug<br>stability with <span class="accent">AI</span><br>not <span class="accent2">years of waiting</span></h1>
+    <p class="hero-sub">StabilityAI is a computational pipeline that forecasts pharmaceutical degradation up to 22 months — from just 6 months of experimental data — cutting stability study timelines by up to 70%.</p>
+    <div class="hero-cta">
+      <a href="241CHO15.pdf" class="btn-primary" target="_blank">Read full report &rarr;</a>
+      <a href="stability_ai_tool.py" class="btn-secondary" download>Download source code</a>
+    </div>
+    <div class="hero-stats">
+      <div>
+        <div class="hero-stat-val" style="color:var(--accent2);">70%</div>
+        <div class="hero-stat-lbl">Timeline reduction</div>
+      </div>
+      <div>
+        <div class="hero-stat-val" style="color:var(--accent);">&lt;1%</div>
+        <div class="hero-stat-lbl">Prediction error at 22 months</div>
+      </div>
+      <div>
+        <div class="hero-stat-val" style="color:var(--accent4);">R²=1.00</div>
+        <div class="hero-stat-lbl">Arrhenius model fit</div>
+      </div>
+      <div>
+        <div class="hero-stat-val" style="color:var(--accent3);">900/1000</div>
+        <div class="hero-stat-lbl">Zeneth pathway score</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- PROBLEM & SOLUTION -->
+<section id="problem">
+  <div class="section-label">01 — Problem &amp; solution</div>
+  <div class="section-title">Two years of waiting.<br>We fixed that.</div>
+  <div class="section-sub">Pharmaceutical stability testing is a regulatory requirement — but the timelines are broken. StabilityAI makes early extrapolation reliable and defensible.</div>
+
+  <div class="badge-row">
+    <span class="badge b-green">v1.0 shipped · May 2026</span>
+    <span class="badge b-purple">Python · scikit-learn</span>
+    <span class="badge b-orange">ICH Q1A compliant</span>
+    <span class="badge b-teal">Zeneth · in silico</span>
+    <span class="badge b-red">Arrhenius kinetics</span>
+  </div>
+
+  <div class="problem-solution">
+    <div class="ps-card problem">
+      <div class="ps-label">The problem</div>
+      <p>Conventional pharmaceutical stability testing under ICH Q1A requires real-time studies at 25°C that take <strong>18–24 months</strong> before data is sufficient for regulatory submission. This delays drug approvals, costs resources, and slows patient access to medicines. Teams lack validated computational tools to bridge the gap.</p>
+    </div>
+    <div class="ps-card solution">
+      <div class="ps-label">The solution</div>
+      <p>StabilityAI ingests <strong>6 months of impurity data</strong>, trains a per-temperature linear regression model, extrapolates impurity growth to 22 months using zero-order kinetics, calculates activation energy via the Arrhenius equation, and cross-validates with Zeneth in silico pathway scoring — all in minutes, with &lt;1% error against real experimental data.</p>
+    </div>
+  </div>
+
+  <div class="kpi-strip">
+    <div class="kpi-card c1">
+      <div class="kpi-val">70%</div>
+      <div class="kpi-lbl">Reduction in study timeline needed</div>
+      <div class="kpi-delta">2 years → 6 months input data</div>
+    </div>
+    <div class="kpi-card c2">
+      <div class="kpi-val">&lt;1%</div>
+      <div class="kpi-lbl">Prediction error vs real experimental data</div>
+      <div class="kpi-delta">AI vs actual at 22 months</div>
+    </div>
+    <div class="kpi-card c3">
+      <div class="kpi-val">R²=1.00</div>
+      <div class="kpi-lbl">Arrhenius model fit across pH conditions</div>
+      <div class="kpi-delta">pH 3.5 and pH 5 both confirmed</div>
+    </div>
+    <div class="kpi-card c4">
+      <div class="kpi-val">900/1000</div>
+      <div class="kpi-lbl">Zeneth hydrolysis pathway score</div>
+      <div class="kpi-delta">Single dominant pathway confirmed</div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- PERSONAS -->
+<section id="personas">
+  <div class="section-label">02 — User personas</div>
+  <div class="section-title">Who needs this product</div>
+  <div class="section-sub">Four distinct users inside a pharma organisation, each with a different pain point that StabilityAI directly addresses.</div>
+  <div class="persona-grid">
+    <div class="persona-card">
+      <div class="persona-head">
+        <div class="avatar" style="background:rgba(124,111,255,0.15);color:var(--accent);">RS</div>
+        <div>
+          <div class="persona-name">Regulatory scientist</div>
+          <div class="persona-role">R&amp;D · Pharma company</div>
+        </div>
+      </div>
+      <p class="persona-pain">Needs to submit ICH-compliant stability data for drug approval, but real-time studies at 25°C take 18–24 months and delay market entry and patient access.</p>
+      <div class="persona-need"><strong>Needs:</strong> Validated extrapolated data generated in weeks, not years, with cross-validated evidence regulators can accept.</div>
+    </div>
+    <div class="persona-card">
+      <div class="persona-head">
+        <div class="avatar" style="background:rgba(61,232,160,0.15);color:var(--accent2);">QC</div>
+        <div>
+          <div class="persona-name">QC / QA manager</div>
+          <div class="persona-role">Manufacturing · Microlabs</div>
+        </div>
+      </div>
+      <p class="persona-pain">Responsible for shelf-life decisions and impurity threshold compliance. Currently relies on conservative manual estimates that waste inventory and increase cost.</p>
+      <div class="persona-need"><strong>Needs:</strong> Precise month-by-month impurity forecasts to optimise shelf-life, storage, and compliance decisions.</div>
+    </div>
+    <div class="persona-card">
+      <div class="persona-head">
+        <div class="avatar" style="background:rgba(255,169,77,0.15);color:var(--accent4);">FC</div>
+        <div>
+          <div class="persona-name">Formulation chemist</div>
+          <div class="persona-role">Drug development lab</div>
+        </div>
+      </div>
+      <p class="persona-pain">Needs to understand which degradation pathway dominates so they can design a stable formulation — but experimental pathway testing is expensive and slow.</p>
+      <div class="persona-need"><strong>Needs:</strong> Rapid in silico pathway screening before committing to costly lab experiments.</div>
+    </div>
+    <div class="persona-card">
+      <div class="persona-head">
+        <div class="avatar" style="background:rgba(255,107,107,0.15);color:var(--accent3);">PD</div>
+        <div>
+          <div class="persona-name">Product director</div>
+          <div class="persona-role">Pharma operations</div>
+        </div>
+      </div>
+      <p class="persona-pain">Stability study delays cost months of market exclusivity and competitive advantage. Needs computational predictions that are defensible to regulators and auditors.</p>
+      <div class="persona-need"><strong>Needs:</strong> Traceable, documented forecasts with multi-method cross-validation evidence (AI + Zeneth + Arrhenius).</div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ROADMAP -->
+<section id="roadmap">
+  <div class="section-label">03 — Product roadmap</div>
+  <div class="section-title">What's built. What's next.</div>
+  <div class="section-sub">Three phases from proof of concept to a scalable multi-drug platform with regulatory report generation.</div>
+  <div class="roadmap">
+    <div class="rm-phase">
+      <div class="rm-label">Phase 1<br><span class="rm-tag" style="background:rgba(61,232,160,0.12);color:var(--accent2);">Shipped</span></div>
+      <div class="rm-items">
+        <div class="rm-item done">
+          <div class="rm-dot" style="background:var(--accent2);"></div>
+          <div>
+            <div class="rm-title">Data ingestion &amp; zero-order modeling</div>
+            <div class="rm-desc">Excel input pipeline, pandas preprocessing, zero-order kinetic extrapolation to 22 months at 25°C &amp; 40°C for drug N1003.</div>
+            <span class="rm-tag" style="background:rgba(61,232,160,0.1);color:var(--accent2);">Done · May 2026</span>
+          </div>
+        </div>
+        <div class="rm-item done">
+          <div class="rm-dot" style="background:var(--accent2);"></div>
+          <div>
+            <div class="rm-title">AI linear regression engine</div>
+            <div class="rm-desc">scikit-learn LinearRegression trained per temperature condition. Auto-exports prediction table as Excel and degradation graph as PNG.</div>
+            <span class="rm-tag" style="background:rgba(61,232,160,0.1);color:var(--accent2);">Done · May 2026</span>
+          </div>
+        </div>
+        <div class="rm-item done">
+          <div class="rm-dot" style="background:var(--accent2);"></div>
+          <div>
+            <div class="rm-title">Arrhenius activation energy calculator</div>
+            <div class="rm-desc">Calculates Eₐ across pH conditions (3.5 and 5), confirming mechanism consistency. R² = 1.00 at both pH levels. Eₐ ≈ 73 kJ/mol.</div>
+            <span class="rm-tag" style="background:rgba(61,232,160,0.1);color:var(--accent2);">Done · May 2026</span>
+          </div>
+        </div>
+        <div class="rm-item done">
+          <div class="rm-dot" style="background:var(--accent2);"></div>
+          <div>
+            <div class="rm-title">Zeneth in silico validation layer</div>
+            <div class="rm-desc">Cross-validated AI predictions against Zeneth pathway scores at pH 1–14 and 25–100°C. Single dominant hydrolysis pathway confirmed with score ≥ 800.</div>
+            <span class="rm-tag" style="background:rgba(61,232,160,0.1);color:var(--accent2);">Done · May 2026</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="rm-phase">
+      <div class="rm-label">Phase 2<br><span class="rm-tag" style="background:rgba(124,111,255,0.12);color:var(--accent);">Next</span></div>
+      <div class="rm-items">
+        <div class="rm-item active">
+          <div class="rm-dot" style="background:var(--accent);"></div>
+          <div>
+            <div class="rm-title">Multi-drug support &amp; reaction order detection</div>
+            <div class="rm-desc">Extend beyond N1003 to a library of molecules. Auto-detect reaction order (zero vs first-order) from data fit quality.</div>
+            <span class="rm-tag" style="background:rgba(124,111,255,0.1);color:var(--accent);">In design · Q3 2026</span>
+          </div>
+        </div>
+        <div class="rm-item active">
+          <div class="rm-dot" style="background:var(--accent);"></div>
+          <div>
+            <div class="rm-title">Regulatory report auto-generation</div>
+            <div class="rm-desc">One-click ICH Q1A formatted PDF output with all kinetic parameters, confidence intervals, and Zeneth cross-validation evidence.</div>
+            <span class="rm-tag" style="background:rgba(124,111,255,0.1);color:var(--accent);">Planned · Q4 2026</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="rm-phase">
+      <div class="rm-label">Phase 3<br><span class="rm-tag" style="background:rgba(136,136,160,0.12);color:var(--muted);">Future</span></div>
+      <div class="rm-items">
+        <div class="rm-item future">
+          <div class="rm-dot" style="background:var(--muted);"></div>
+          <div>
+            <div class="rm-title">Web interface for non-technical users</div>
+            <div class="rm-desc">Upload Excel → receive predictions. No Python required. Built for QA managers and regulatory scientists.</div>
+            <span class="rm-tag" style="background:rgba(136,136,160,0.1);color:var(--muted);">Exploring</span>
+          </div>
+        </div>
+        <div class="rm-item future">
+          <div class="rm-dot" style="background:var(--muted);"></div>
+          <div>
+            <div class="rm-title">LIMS system API integration</div>
+            <div class="rm-desc">Push stability data from lab information management systems directly into StabilityAI for real-time automated forecasting.</div>
+            <span class="rm-tag" style="background:rgba(136,136,160,0.1);color:var(--muted);">Exploring</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- METRICS -->
+<section id="metrics">
+  <div class="section-label">04 — Success metrics</div>
+  <div class="section-title">How we measure success</div>
+  <div class="section-sub">Four quantitative metrics that validate the product's accuracy, robustness, and alignment with experimental reality.</div>
+  <div class="validation-grid">
+    <div class="val-card">
+      <div class="val-title">Prediction accuracy — 40°C at 22 months</div>
+      <div class="val-val" style="color:var(--accent2);">99.2%</div>
+      <div class="val-target">Target: &gt;95% — exceeded. AI predicted 4.99% vs actual 4.95%.</div>
+      <div class="bar-bg"><div class="bar-fill" style="width:99%;background:var(--accent2);"></div></div>
+    </div>
+    <div class="val-card">
+      <div class="val-title">Prediction accuracy — 25°C at 22 months</div>
+      <div class="val-val" style="color:var(--accent);">97.1%</div>
+      <div class="val-target">Target: &gt;95% — exceeded. AI predicted 0.975% vs actual 1.1%.</div>
+      <div class="bar-bg"><div class="bar-fill" style="width:97%;background:var(--accent);"></div></div>
+    </div>
+    <div class="val-card">
+      <div class="val-title">Mechanism consistency across pH</div>
+      <div class="val-val" style="color:var(--accent4);">Confirmed</div>
+      <div class="val-target">Eₐ: 73.85 vs 72.70 kJ/mol — less than 2% difference across pH 3.5 and 5.</div>
+      <div class="bar-bg"><div class="bar-fill" style="width:98%;background:var(--accent4);"></div></div>
+    </div>
+    <div class="val-card">
+      <div class="val-title">Zeneth pathway agreement</div>
+      <div class="val-val" style="color:var(--accent3);">900 / 1000</div>
+      <div class="val-target">Hydrolysis confirmed as the single dominant degradation pathway across all conditions.</div>
+      <div class="bar-bg"><div class="bar-fill" style="width:90%;background:var(--accent3);"></div></div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- RISKS -->
+<section id="risks">
+  <div class="section-label">05 — Risk register</div>
+  <div class="section-title">Known risks &amp; mitigations</div>
+  <div class="section-sub">Every product has risks. Here's what we know, how serious each is, and how we plan to address it.</div>
+  <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:16px;overflow:hidden;">
+    <table class="risk-table">
+      <tr>
+        <th>Risk</th>
+        <th>Impact</th>
+        <th>Severity</th>
+        <th>Mitigation</th>
+      </tr>
+      <tr>
+        <td>Model assumes zero-order kinetics only</td>
+        <td>Inaccurate predictions if degradation is non-linear</td>
+        <td><span class="severity s-med">Medium</span></td>
+        <td>Phase 2 adds automatic reaction order detection</td>
+      </tr>
+      <tr>
+        <td>Zeneth is a proprietary tool (Lhasa Ltd)</td>
+        <td>Dependency on external licensing and availability</td>
+        <td><span class="severity s-med">Medium</span></td>
+        <td>Document all Zeneth outputs; evaluate open-source alternatives</td>
+      </tr>
+      <tr>
+        <td>Only one drug validated (N1003)</td>
+        <td>Low generalisability to other molecules</td>
+        <td><span class="severity s-high">High</span></td>
+        <td>Phase 2 roadmap expands to a multi-drug library</td>
+      </tr>
+      <tr>
+        <td>Regulatory acceptance is not guaranteed</td>
+        <td>Predictions may not replace real-time data for submission</td>
+        <td><span class="severity s-med">Medium</span></td>
+        <td>Position as a supportive tool, not a replacement; cite ICH Q1E for extrapolation guidance</td>
+      </tr>
+      <tr>
+        <td>Input data quality dependency</td>
+        <td>Poor input data produces inaccurate forecasts</td>
+        <td><span class="severity s-low">Low</span></td>
+        <td>Validation checks and error handling built into the pipeline</td>
+      </tr>
+    </table>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- COMPETITIVE -->
+<section>
+  <div class="section-label">06 — Competitive landscape</div>
+  <div class="section-title">Why StabilityAI wins</div>
+  <div class="section-sub">Compared to existing approaches, StabilityAI is the only pipeline that combines quantitative AI forecasting with in silico pathway validation.</div>
+  <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:16px;overflow:hidden;">
+    <table class="comp-table">
+      <tr>
+        <th>Approach</th>
+        <th>Timeline</th>
+        <th>Quantitative forecast</th>
+        <th>Pathway validation</th>
+        <th>pH robustness</th>
+      </tr>
+      <tr>
+        <td>Manual real-time studies</td>
+        <td style="color:var(--accent3);">18–24 months</td>
+        <td>Yes</td>
+        <td>Partial</td>
+        <td>Yes</td>
+      </tr>
+      <tr>
+        <td>Excel extrapolation only</td>
+        <td style="color:var(--accent4);">6 months</td>
+        <td>Yes</td>
+        <td>No</td>
+        <td>Manual</td>
+      </tr>
+      <tr>
+        <td>Zeneth alone</td>
+        <td style="color:var(--accent4);">Days</td>
+        <td>No — qualitative only</td>
+        <td>Yes</td>
+        <td>Yes</td>
+      </tr>
+      <tr class="winner">
+        <td>StabilityAI (this product)</td>
+        <td>6 months data → 22 mo forecast</td>
+        <td>Yes — AI + Arrhenius</td>
+        <td>Yes — Zeneth cross-validated</td>
+        <td>Yes — pH 1–14 tested</td>
+      </tr>
+    </table>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- TECH STACK -->
+<section>
+  <div class="section-label">07 — Technology stack</div>
+  <div class="section-title">Built with</div>
+  <div class="section-sub">Four core tools, each chosen deliberately for a specific role in the pipeline.</div>
+  <div class="tech-grid">
+    <div class="tech-card">
+      <div class="tech-icon" style="background:rgba(124,111,255,0.12);">🐍</div>
+      <div>
+        <div class="tech-name">Python — scikit-learn, pandas, matplotlib</div>
+        <div class="tech-desc">Core AI engine. LinearRegression model trained per temperature condition. pandas handles data ingestion and preprocessing. matplotlib generates the output degradation graph.</div>
+      </div>
+    </div>
+    <div class="tech-card">
+      <div class="tech-icon" style="background:rgba(61,232,160,0.12);">🧬</div>
+      <div>
+        <div class="tech-name">Zeneth — Lhasa Limited</div>
+        <div class="tech-desc">In silico degradation pathway prediction. Used to cross-validate AI predictions against known chemical reaction mechanisms at pH 1–14 and 25–100°C.</div>
+      </div>
+    </div>
+    <div class="tech-card">
+      <div class="tech-icon" style="background:rgba(255,169,77,0.12);">📊</div>
+      <div>
+        <div class="tech-name">Microsoft Excel</div>
+        <div class="tech-desc">Input data format and baseline extrapolation calculations. Used to verify AI model outputs and provide the structured dataset for model training.</div>
+      </div>
+    </div>
+    <div class="tech-card">
+      <div class="tech-icon" style="background:rgba(255,107,107,0.12);">📋</div>
+      <div>
+        <div class="tech-name">ICH Q1A(R2) guidelines</div>
+        <div class="tech-desc">Regulatory framework governing all stability testing conditions, storage requirements, and data interpretation. Ensures all outputs are positioned within accepted pharmaceutical standards.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- CODE -->
+<section id="code">
+  <div class="section-label">08 — Quickstart</div>
+  <div class="section-title">Run it yourself</div>
+  <div class="section-sub">Two commands to install, one to run. The script handles everything — from reading your Excel file to saving predictions and graphs.</div>
+  <div class="code-block">
+    <div class="code-header">
+      <div class="code-dot" style="background:#ff5f57;"></div>
+      <div class="code-dot" style="background:#febc2e;"></div>
+      <div class="code-dot" style="background:#28c840;"></div>
+      <span class="code-filename">terminal</span>
+    </div>
+    <div class="code-body">
+<span class="cg"># 1. Clone the repository</span>
+<span class="cb">git</span> clone https://github.com/yana-ab/stabilityai-pharma-degradation
+<span class="cb">cd</span> stabilityai-pharma-degradation
+
+<span class="cg"># 2. Install dependencies</span>
+<span class="cb">pip</span> install pandas scikit-learn matplotlib openpyxl
+
+<span class="cg"># 3. Run the AI stability predictor</span>
+<span class="cb">python</span> stability_ai_tool.py
+
+<span class="cs">Enter Excel file path: </span>extrap.xlsx
+
+<span class="cg"># Outputs generated automatically:</span>
+<span class="cm">prediction_output.xlsx   # 22-month impurity forecast table</span>
+<span class="cm">stability_graph.png      # impurity vs time chart</span>
+    </div>
+  </div>
+
+  <div class="code-block" style="margin-top:16px;">
+    <div class="code-header">
+      <div class="code-dot" style="background:#ff5f57;"></div>
+      <div class="code-dot" style="background:#febc2e;"></div>
+      <div class="code-dot" style="background:#28c840;"></div>
+      <span class="code-filename">extrap.xlsx — expected input format</span>
+    </div>
+    <div class="code-body">
+<span class="cm">TIME (months) | TEMPERATURE (°C) | IMPURITY (%)</span>
+<span class="cm">─────────────────────────────────────────────</span>
+0             | 25               | 0.05
+3             | 25               | 0.20
+6             | 25               | 0.30
+0             | 40               | 0.05
+3             | 40               | 0.70
+6             | 40               | 1.40
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- FOOTER -->
+<footer>
+  <div>
+    <div class="footer-left">Stability<span>AI</span></div>
+    <div style="font-size:13px;color:var(--muted);margin-top:6px;">M.Sc. Organic Chemistry · St Joseph's University, Bengaluru · 2026</div>
+    <div style="font-size:12px;color:var(--muted);margin-top:4px;">Built by Yana A B (241CHO15) · Guided by Dr. Manoj Kumar Singh &amp; Dr. Anchal Singhal · Industry partner: Microlabs Kudlu</div>
+  </div>
+  <div class="footer-right">
+    <div style="margin-bottom:6px;"><a href="241CHO15.pdf" target="_blank">Full dissertation PDF</a></div>
+    <div style="margin-bottom:6px;"><a href="stability_ai_tool.py" download>Download source code</a></div>
+    <div style="font-size:11px;color:var(--muted);margin-top:8px;">Licensed under MIT · Academic use</div>
+  </div>
+</footer>
+
+</body>
+</html>
